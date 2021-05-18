@@ -1,4 +1,5 @@
 import json
+import tablib
 
 class JsonConverter:
   def __init__(self):
@@ -70,7 +71,6 @@ class JsonConverter:
 
   def path_atd_json_to_tuple(self, json_data: str):
     data = json.loads(json_data)
-    # print(data)
     return (
       data['area'],
       data['name'],
@@ -80,7 +80,6 @@ class JsonConverter:
 
   def path_dta_json_to_tuple(self, json_data: str):
     data = json.loads(json_data)
-    # print(data)
     return (
       data['name'],
       data['content'],
@@ -88,3 +87,15 @@ class JsonConverter:
       data['areaNumber'],
       data['path']
     )
+
+  def json_to_excel(self, json_data: str):
+    data = json.loads(json_data)
+    headers = tuple([attr for attr in data[0].keys()])
+
+    excel_data = []
+    for obj in data:
+      body = [value for value in obj.values()]
+      excel_data.append(tuple(body))
+
+    excel_data = tablib.Dataset(*excel_data, headers=headers)
+    return excel_data

@@ -24,6 +24,7 @@ class Server:
       'deleteItem': self.on_delete_item,
       'insertItem': self.on_insert_item,
       'updateItem': self.on_update_item,
+      'exportData': self.on_export_data,
       'exit': self.on_exit
     }
 
@@ -48,7 +49,8 @@ class Server:
     if not handler is None:
       if (
         command == 'deleteItem' or
-        command == 'insertItem'
+        command == 'insertItem' or
+        command == 'exportData'
       ):
         handler(client, server, messages[2], messages[3])
       elif command == 'updateItem':
@@ -120,6 +122,25 @@ class Server:
       json_data = self.converter.path_dta_json_to_tuple(json_data)
       json_data_before = self.converter.path_dta_json_to_tuple(json_data_before)
       self.database.update_item_path_dta(json_data, json_data_before)
+
+  def on_export_data (
+    self, client, server: WebsocketServer,
+    file_name: str,
+    json_data: str
+  ):
+    excel_data = self.converter.json_to_excel(json_data)
+    ext = file_name.split('.')[1]
+    excel: Any
+    if ext == 'xls':
+      excel = excel_data.xls
+    if ext == 'xlsx':
+      excel = excel_data.xlsx
+    try:
+      open('output/%s' % file_name, 'wb').write(excel)
+      server.send_message(client, 'res|info|io')
+    except:
+      print('Error occured while trying to write file.')
+      server.send_message(client, 'res|error|io')
 
   def on_exit(self, client, server: WebsocketServer):
     server.server_close()
