@@ -88,6 +88,46 @@ class JsonConverter:
       data['path']
     )
 
+  def batches_json_to_tuple(self, json_data: str):
+    data_array = json.loads(json_data)
+    return list(map(
+      lambda data: (
+        data['batchNo'],
+        data['arrivalTime'],
+        data['arrivalNum'],
+        data['dropOffNo'],
+        data['standNo'],
+        data['securityNo'],
+        data['scCapacity']
+      ),
+      data_array
+    ))
+
+  def paths_atd_json_to_tuple(self, json_data: str):
+    data_array = json.loads(json_data)
+    return list(map(
+      lambda data: (
+        data['area'],
+        data['name'],
+        data['destination'],
+        data['path']
+      ),
+      data_array
+    ))
+
+  def paths_dta_json_to_tuple(self, json_data: str):
+    data_array = json.loads(json_data)
+    return list(map(
+      lambda data: (
+        data['name'],
+        data['content'],
+        data['securityNo'],
+        data['areaNumber'],
+        data['path']
+      ),
+      data_array
+    ))
+
   def json_to_excel(self, json_data: str):
     data = json.loads(json_data)
     headers = tuple([attr for attr in data[0].keys()])

@@ -43,13 +43,28 @@ class Database:
     cursor.close()
     return data
 
-  def set_data(self, sql: str):
+  def set_data(self, sql: str, commit = True):
     cursor = self.connection.cursor()
     try:
       cursor.execute(sql)
-      self.commit()
-    except:
+      if commit:
+        self.commit()
+    except Exception as error:
       self.roll_back()
+      print('Failed to commit changes to database,')
+      print('Error message is: %s,' % error)
+    cursor.close()
+
+  def set_multi_data(self, sql: str, data, commit = True):
+    cursor = self.connection.cursor()
+    try:
+      cursor.executemany(sql, data)
+      if commit:
+        self.commit()
+    except Exception as error:
+      self.roll_back()
+      print('Failed to commit changes to database,')
+      print('Error message is: %s,' % error)
     cursor.close()
 
   def get_version(self):
@@ -64,43 +79,43 @@ class Database:
   def get_paths_dta(self):
     return self.get_multi_data('select * from path_2;')
 
-  def delete_item_batch(self, json_data: str):
+  def delete_item_batch(self, json_data):
     self.set_data(
       'delete from batch where batchno=%s;' %
       json_data[0]
     )
 
-  def delete_item_path_atd(self, json_data: str):
+  def delete_item_path_atd(self, json_data):
     self.set_data(
       'delete from path_1 where area=\'%s\' and destination=\'%s\';' %
       (json_data[0], json_data[2])
     )
 
-  def delete_item_path_dta(self, json_data: str):
+  def delete_item_path_dta(self, json_data):
     self.set_data(
       'delete from path_2 where name=\'%s\';' %
       json_data[0]
     )
 
-  def insert_item_batch(self, json_data: str):
+  def insert_item_batch(self, json_data):
     self.set_data(
       'insert into batch values(%s, %s, %s, \'%s\', %s, \'%s\', %s);' %
       json_data
     )
 
-  def insert_item_path_atd(self, json_data: str):
+  def insert_item_path_atd(self, json_data):
     self.set_data(
       'insert into path_1 values(\'%s\', \'%s\', \'%s\', \'%s\');' %
       json_data
     )
 
-  def insert_item_path_dta(self, json_data: str):
+  def insert_item_path_dta(self, json_data):
     self.set_data(
       'insert into path_2 values(\'%s\', \'%s\', \'%s\', %s, \'%s\');' %
       json_data
     )
 
-  def update_item_batch(self, json_data: str, json_data_before: str):
+  def update_item_batch(self, json_data, json_data_before):
     self.set_data(
       '''
       update batch set
@@ -115,7 +130,7 @@ class Database:
       ''' % (json_data + (json_data_before[0],))
     )
 
-  def update_item_path_atd(self, json_data: str, json_data_before: str):
+  def update_item_path_atd(self, json_data, json_data_before):
     self.set_data(
       '''
       update path_1 set
@@ -127,7 +142,7 @@ class Database:
       ''' % (json_data + (json_data_before[0], json_data_before[2]))
     )
 
-  def update_item_path_dta(self, json_data: str, json_data_before: str):
+  def update_item_path_dta(self, json_data, json_data_before):
     self.set_data(
       '''
       update path_2 set
@@ -138,4 +153,31 @@ class Database:
         path=\'%s\'
       where name=\'%s\';
       ''' % (json_data + (json_data_before[0],))
+    )
+
+  def restore_batches(self, json_data):
+    self.set_data(
+      'delete from batch;', False
+    )
+    self.set_multi_data(
+      pymysql.converters.escape_string('insert into batch values(%s, %s, %s, %s, %s, %s, %s);'),
+      json_data
+    )
+
+  def restore_paths_atd(self, json_data):
+    self.set_data(
+      'delete from path_1;', False
+    )
+    self.set_multi_data(
+      pymysql.converters.escape_string('insert into path_1 values(%s, %s, %s, %s);'),
+      json_data
+    )
+
+  def restore_paths_dta(self, json_data):
+    self.set_data(
+      'delete from path_2;', False
+    )
+    self.set_multi_data(
+      pymysql.converters.escape_string('insert into path_2 values(%s, %s, %s, %s, %s);'),
+      json_data
     )

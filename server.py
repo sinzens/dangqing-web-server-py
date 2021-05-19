@@ -24,6 +24,7 @@ class Server:
       'deleteItem': self.on_delete_item,
       'insertItem': self.on_insert_item,
       'updateItem': self.on_update_item,
+      'restoreFromBackups': self.on_restore_from_backups,
       'exportData': self.on_export_data,
       'exit': self.on_exit
     }
@@ -50,6 +51,7 @@ class Server:
       if (
         command == 'deleteItem' or
         command == 'insertItem' or
+        command == 'restoreFromBackups' or
         command == 'exportData'
       ):
         handler(client, server, messages[2], messages[3])
@@ -78,7 +80,8 @@ class Server:
     server.send_message(client, 'res|pathsDta|%s' % json_data)
 
   def on_delete_item(
-    self, client, server: WebsocketServer, table: str,
+    self, client, server: WebsocketServer,
+    table: str,
     json_data: str,
   ):
     if table == 'batch':
@@ -92,7 +95,8 @@ class Server:
       self.database.delete_item_path_dta(json_data)
 
   def on_insert_item(
-    self, client, server: WebsocketServer, table: str,
+    self, client, server: WebsocketServer,
+    table: str,
     json_data: str,
   ):
     if table == 'batch':
@@ -122,6 +126,20 @@ class Server:
       json_data = self.converter.path_dta_json_to_tuple(json_data)
       json_data_before = self.converter.path_dta_json_to_tuple(json_data_before)
       self.database.update_item_path_dta(json_data, json_data_before)
+
+  def on_restore_from_backups(self, client, server: WebsocketServer,
+    table: str,
+    json_data: str
+  ):
+    if table == 'batch':
+      json_data = self.converter.batches_json_to_tuple(json_data)
+      self.database.restore_batches(json_data)
+    if table == 'atdPath':
+      json_data = self.converter.paths_atd_json_to_tuple(json_data)
+      self.database.restore_paths_atd(json_data)
+    if table == 'dtaPath':
+      json_data = self.converter.paths_dta_json_to_tuple(json_data)
+      self.database.restore_paths_dta(json_data)
 
   def on_export_data (
     self, client, server: WebsocketServer,
